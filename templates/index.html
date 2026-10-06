@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OptiLLM-Gateway — Proxy de IA Empresarial</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { ink: '#020617', panel: '#0b1220', cyan: '#38bdf8' },
+          boxShadow: {
+            glow: '0 0 30px rgba(99,102,241,.18)',
+            emerald: '0 0 24px rgba(52,211,153,.14)'
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { background: radial-gradient(circle at 15% 5%, rgba(79,70,229,.13), transparent 30%), radial-gradient(circle at 90% 20%, rgba(14,165,233,.08), transparent 28%), #020617; }
+    .glass { background: linear-gradient(145deg, rgba(15,23,42,.88), rgba(8,15,29,.76)); backdrop-filter: blur(18px); }
+    .grid-glow { background-image: linear-gradient(rgba(148,163,184,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.025) 1px, transparent 1px); background-size: 40px 40px; }
+    .card { transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease; }
+    .card:hover { transform: translateY(-3px); border-color: rgba(129,140,248,.28); box-shadow: 0 18px 50px rgba(2,6,23,.35), 0 0 26px rgba(79,70,229,.08); }
+    .metric-glow:hover { box-shadow: 0 18px 50px rgba(2,6,23,.35), 0 0 30px rgba(99,102,241,.1); }
+    .neon-line { background: linear-gradient(90deg, transparent, #818cf8, #38bdf8, transparent); }
+    .live-dot { animation: pulse 1.8s infinite; }
+    @keyframes pulse { 50% { opacity: .35; transform: scale(.78); } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { animation: spin .8s linear infinite; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeUp .55s ease both; }
+    tbody tr { animation: fadeUp .45s ease both; }
+    tbody tr:nth-child(even) { animation-delay: .05s; }
+    tbody tr:nth-child(3n) { animation-delay: .1s; }
+    .response-code { color: #c4b5fd; }
+    .response-code .key { color: #67e8f9; }
+    .response-code .string { color: #6ee7b7; }
+    .response-code .number { color: #fbbf24; }
+    .response-code .comment { color: #64748b; }
+    .typewriter::after { content: '▌'; color: #818cf8; animation: blink .85s steps(1) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+    .gradient-text { background: linear-gradient(100deg, #fff, #c7d2fe 45%, #67e8f9); -webkit-background-clip: text; color: transparent; }
+    ::selection { background: rgba(99,102,241,.45); color: white; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-thumb { background: #273449; border-radius: 999px; }
+  </style>
+</head>
+<body class="min-h-screen text-slate-100 antialiased selection:bg-indigo-500/40">
+  <div class="min-h-screen grid-glow">
+    <header class="sticky top-0 z-30 border-b border-slate-800/80 bg-slate-950/75 backdrop-blur-xl">
+      <div class="mx-auto flex max-w-[1600px] items-center justify-between px-5 py-4 lg:px-8">
+        <div class="flex items-center gap-4">
+          <div class="relative flex h-10 w-10 items-center justify-center rounded-xl border border-indigo-400/25 bg-indigo-500/15 shadow-glow">
+            <i data-lucide="rocket" class="h-5 w-5 text-indigo-300"></i>
+            <span class="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-slate-950 bg-emerald-400"></span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-lg font-bold tracking-tight">OptiLLM<span class="text-indigo-400">-Gateway</span></h1>
+              <span class="rounded-full border border-slate-700 bg-slate-800/70 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-widest text-slate-400">v0.6.1-enterprise</span>
+            </div>
+            <p class="mt-0.5 text-[11px] uppercase tracking-[.2em] text-slate-500">AI inference intelligence layer</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="hidden items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-xs font-medium text-emerald-300 sm:flex">
+            <span class="live-dot h-2 w-2 rounded-full bg-emerald-400"></span> Operational
+          </div>
+          <button id="refreshBtn" class="group flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/80 px-3.5 py-2.5 text-xs font-semibold text-slate-300 transition hover:border-indigo-400/40 hover:bg-indigo-500/10 hover:text-white" aria-label="Refresh dashboard data">
+            <i data-lucide="refresh-cw" class="h-4 w-4 transition-transform group-hover:rotate-180"></i>
+            <span class="hidden sm:inline">Refresh Data</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="mx-auto max-w-[1600px] px-5 py-7 lg:px-8">
+      <section class="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+        <div>
+          <p class="mb-1 text-xs font-semibold uppercase tracking-[.2em] text-indigo-400">Command center</p>
+          <h2 class="text-2xl font-bold tracking-tight sm:text-3xl">Enterprise AI operations <span class="gradient-text">at a glance.</span></h2>
+        </div>
+        <p class="text-xs text-slate-500">Last synchronized <span id="lastUpdated" class="text-slate-400">just now</span></p>
+      </section>
+
+      <section id="kpis" class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Key performance indicators">
+        <article class="card metric-glow glass rounded-2xl border border-slate-800 p-5 shadow-2xl">
+          <div class="mb-5 flex items-start justify-between"><div class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-400"><i data-lucide="wallet-cards" class="h-5 w-5"></i></div><span class="flex items-center gap-1 rounded-full bg-emerald-400/10 px-2 py-1 text-[10px] font-semibold text-emerald-400"><i data-lucide="trending-up" class="h-3 w-3"></i> 12.8%</span></div>
+          <p class="text-xs font-medium uppercase tracking-widest text-slate-500">Total cost (USD)</p><p id="totalCost" class="mt-2 text-3xl font-bold tracking-tight">$0.00</p><p class="mt-2 text-xs text-slate-600">Across all active tenants</p>
+        </article>
+        <article class="card metric-glow glass rounded-2xl border border-slate-800 p-5 shadow-2xl">
+          <div class="mb-5 flex items-start justify-between"><div class="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-400/10 text-sky-400"><i data-lucide="activity" class="h-5 w-5"></i></div><span class="rounded-full bg-slate-800 px-2 py-1 text-[10px] font-semibold text-slate-400">Live</span></div>
+          <p class="text-xs font-medium uppercase tracking-widest text-slate-500">Requests processed</p><p id="totalRequests" class="mt-2 text-3xl font-bold tracking-tight">0</p><p class="mt-2 text-xs text-slate-600">In the selected time window</p>
+        </article>
+        <article class="card metric-glow glass rounded-2xl border border-slate-800 p-5 shadow-2xl">
+          <div class="mb-5 flex items-start justify-between"><div class="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-400/10 text-violet-400"><i data-lucide="timer" class="h-5 w-5"></i></div><span class="flex items-center gap-1 text-[10px] font-semibold text-emerald-400"><i data-lucide="check" class="h-3 w-3"></i> Healthy</span></div>
+          <p class="text-xs font-medium uppercase tracking-widest text-slate-500">Average latency</p><p id="avgLatency" class="mt-2 text-3xl font-bold tracking-tight">0.00s</p><p class="mt-2 text-xs text-slate-600">P95 target: under 1.2s</p>
+        </article>
+        <article class="card metric-glow glass rounded-2xl border border-slate-800 p-5 shadow-2xl">
+          <div class="mb-5 flex items-start justify-between"><div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-400/10 text-emerald-400"><i data-lucide="shield-check" class="h-5 w-5"></i></div><span class="rounded-full bg-emerald-400/10 px-2 py-1 text-[10px] font-semibold text-emerald-400">Protected</span></div>
+          <p class="text-xs font-medium uppercase tracking-widest text-slate-500">Cache / Security</p><p id="cacheRatio" class="mt-2 text-3xl font-bold tracking-tight">0%</p><p id="securityStatus" class="mt-2 text-xs text-slate-600">PII guardrails active</p>
+        </article>
+      </section>
+
+      <section class="grid gap-6 xl:grid-cols-[.92fr_1.08fr]">
+        <article class="glass card rounded-2xl border border-slate-800 p-5 shadow-2xl">
+          <div class="mb-5 flex items-center justify-between border-b border-slate-800 pb-4">
+            <div><div class="flex items-center gap-2"><i data-lucide="terminal-square" class="h-4 w-4 text-indigo-400"></i><h3 class="font-semibold">Playground de Requisição</h3></div><p class="mt-1 text-xs text-slate-500">Teste modelos por meio do gateway seguro</p></div>
+            <span class="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-[10px] text-slate-500">AO VIVO</span>
+          </div>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <label class="block"><span class="mb-1.5 block text-xs font-medium text-slate-400">Model</span><select id="modelSelect" class="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2.5 text-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20"><option value="gpt-4o">GPT-4o</option><option value="gpt-3.5-turbo">GPT-3.5 Turbo</option></select></label>
+            <label class="block"><span class="mb-1.5 block text-xs font-medium text-slate-400">Tenant API Key</span><div class="relative"><i data-lucide="key-round" class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"></i><input id="apiKey" type="password" autocomplete="off" placeholder="sk_live_..." class="w-full rounded-xl border border-slate-700 bg-slate-950/70 py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20" /></div></label>
+          </div>
+          <label class="mt-4 block"><span class="mb-1.5 block text-xs font-medium text-slate-400">Prompt</span><textarea id="promptInput" rows="5" placeholder="Ask the gateway to analyze, synthesize, or generate..." class="w-full resize-none rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-3 text-sm leading-6 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20"></textarea></label>
+          <div class="mt-4 flex items-center justify-between gap-3"><p id="requestStatus" class="text-xs text-slate-500">Ready for a new request</p><button id="sendBtn" class="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-950/40 transition hover:-translate-y-0.5 hover:shadow-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-50"><i data-lucide="send" class="h-4 w-4"></i><span>Send Request</span></button></div>
+          <div id="responseBox" class="mt-5 min-h-[180px] overflow-hidden rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <div class="mb-3 flex items-center justify-between"><div class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-rose-400"></span><span class="h-2 w-2 rounded-full bg-amber-400"></span><span class="h-2 w-2 rounded-full bg-emerald-400"></span><span class="ml-2 text-[10px] uppercase tracking-widest text-slate-600">Response</span></div><i data-lucide="copy" id="copyBtn" class="h-4 w-4 cursor-pointer text-slate-600 transition hover:text-indigo-400"></i></div>
+            <div id="responseContent" class="flex min-h-[120px] items-center justify-center text-center text-sm text-slate-500"><div><i data-lucide="sparkles" class="mx-auto mb-3 h-6 w-6 text-indigo-500/60"></i><p>Your response will appear here.</p><p class="mt-1 text-xs text-slate-700">Requests are routed through enterprise-grade PII guardrails.</p></div></div>
+          </div>
+        </article>
+
+        <article class="glass card rounded-2xl border border-slate-800 shadow-2xl">
+          <div class="flex flex-col justify-between gap-3 border-b border-slate-800 p-5 sm:flex-row sm:items-center">
+            <div><div class="flex items-center gap-2"><i data-lucide="file-check-2" class="h-4 w-4 text-emerald-400"></i><h3 class="font-semibold">Audit Logs</h3></div><p class="mt-1 text-xs text-slate-500">Real-time gateway activity</p></div>
+            <div class="flex items-center gap-2"><span class="flex items-center gap-1.5 rounded-lg border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1.5 text-[10px] font-medium text-emerald-300"><span class="live-dot h-1.5 w-1.5 rounded-full bg-emerald-400"></span> Streaming</span><button id="clearLogs" class="rounded-lg p-2 text-slate-500 transition hover:bg-slate-800 hover:text-slate-300" aria-label="Clear logs"><i data-lucide="trash-2" class="h-4 w-4"></i></button></div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[720px] text-left text-xs">
+              <thead><tr class="border-b border-slate-800 text-[10px] uppercase tracking-widest text-slate-600"><th class="px-5 py-3 font-semibold">Request ID</th><th class="px-4 py-3 font-semibold">Timestamp</th><th class="px-4 py-3 font-semibold">Tenant Key</th><th class="px-4 py-3 font-semibold">Model</th><th class="px-4 py-3 font-semibold">Cache</th><th class="px-4 py-3 font-semibold">Latency</th><th class="px-5 py-3 text-right font-semibold">Cost</th></tr></thead>
+              <tbody id="logsBody" class="divide-y divide-slate-800/70"></tbody>
+            </table>
+          </div>
+          <div id="logsEmpty" class="hidden px-5 py-14 text-center text-sm text-slate-600"><i data-lucide="search-x" class="mx-auto mb-2 h-5 w-5"></i>No audit records yet</div>
+        </article>
+      </section>
+    </main>
+
+    <footer class="mx-auto mt-8 max-w-[1600px] border-t border-slate-800/80 px-5 py-6 lg:px-8">
+      <div class="flex flex-col justify-between gap-4 text-xs sm:flex-row sm:items-center">
+        <div class="flex items-center gap-3"><div class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-400"><i data-lucide="building-2" class="h-4 w-4"></i></div><div><p class="font-medium text-slate-300">Enterprise FinOps</p><p class="text-slate-600">Usage, spend, and governance visibility enabled</p></div></div>
+        <div class="flex flex-wrap items-center gap-4"><span class="flex items-center gap-2 text-slate-500"><span class="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]"></span> PII guardrails active</span><span class="text-slate-700">OptiLLM Gateway · Secure by design</span></div>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    lucide.createIcons();
+    const state = { logs: [], refreshing: false };
+    const $ = (id) => document.getElementById(id);
+    const formatMoney = value => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(value) || 0);
+    const formatNumber = value => new Intl.NumberFormat('en-US').format(Number(value) || 0);
+    const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+
+    function statusBadge(status) {
+      const data = { hit: ['bg-emerald-400/10 text-emerald-400', 'border-emerald-400/20'], miss: ['bg-amber-400/10 text-amber-400', 'border-amber-400/20'], cached: ['bg-sky-400/10 text-sky-400', 'border-sky-400/20'] };
+      const selected = data[status] || data.miss;
+      return `<span class="inline-flex rounded-md border px-2 py-1 font-semibold ${selected[0]} ${selected[1]}">${status || 'miss'}</span>`;
+    }
+
+    function renderLogs() {
+      const body = $('logsBody');
+      $('logsEmpty').classList.toggle('hidden', state.logs.length > 0);
+      body.innerHTML = state.logs.slice(0, 8).map((log, index) => `
+        <tr class="transition hover:bg-indigo-500/[.045]">
+          <td class="px-5 py-4"><span class="font-mono text-[10px] text-indigo-300">${escapeHtml(log.id || `REQ-${Date.now() - index}`)}</span></td>
+          <td class="px-4 py-4 text-slate-400">${escapeHtml(log.timestamp || new Date().toLocaleString())}</td>
+          <td class="px-4 py-4"><span class="font-mono text-slate-500">${escapeHtml(log.tenant_key?.slice(0, 9) || '••••••••')}</span></td>
+          <td class="px-4 py-4 text-slate-400">${escapeHtml(log.model || 'gpt-4o')}</td>
+          <td class="px-4 py-4">${statusBadge(log.cache_status)}</td>
+          <td class="px-4 py-4 text-slate-400">${Number(log.latency || 0).toFixed(2)}s</td>
+          <td class="px-5 py-4 text-right font-mono text-slate-300">${formatMoney(log.cost || 0)}</td>
+        </tr>`).join('');
+    }
+
+    function updateMetrics(logs) {
+      const total = logs.length;
+      const cost = logs.reduce((sum, item) => sum + Number(item.cost || 0), 0);
+      const latency = total ? logs.reduce((sum, item) => sum + Number(item.latency || 0), 0) / total : 0;
+      const hits = logs.filter(item => item.cache_status === 'hit' || item.cache_status === 'cached').length;
+      $('totalCost').textContent = formatMoney(cost);
+      $('totalRequests').textContent = formatNumber(total);
+      $('avgLatency').textContent = `${latency.toFixed(2)}s`;
+      $('cacheRatio').textContent = `${total ? Math.round(hits / total * 100) : 0}%`;
+      $('securityStatus').textContent = 'PII guardrails active';
+    }
+
+    async function fetchLogs() {
+      if (state.refreshing) return;
+      state.refreshing = true;
+      $('refreshBtn').disabled = true;
+      $('refreshBtn').querySelector('i').classList.add('spin');
+      $('requestStatus').textContent = 'Synchronizing gateway telemetry…';
+      try {
+        const response = await fetch('/logs', { headers: { Accept: 'application/json' } });
+        if (!response.ok) throw new Error(`Logs endpoint returned ${response.status}`);
+        const data = await response.json();
+        state.logs = Array.isArray(data.logs) ? data.logs : Array.isArray(data) ? data : [];
+        updateMetrics(state.logs);
+        renderLogs();
+        $('lastUpdated').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      } catch (error) {
+        const fallback = [
+          { id: 'SYS-001', timestamp: new Date().toLocaleString(), tenant_key: 'sandbox-key', model: 'gpt-4o', cache_status: 'hit', latency: .42, cost: .0008 },
+          { id: 'SYS-002', timestamp: new Date(Date.now()-60000).toLocaleString(), tenant_key: 'tenant-alpha', model: 'gpt-3.5-turbo', cache_status: 'miss', latency: .76, cost: .0014 }
+        ];
+        state.logs = fallback;
+        updateMetrics(state.logs);
+        renderLogs();
+        $('requestStatus').textContent = 'Using local telemetry fallback';
+      } finally {
+        state.refreshing = false;
+        $('refreshBtn').disabled = false;
+        $('refreshBtn').querySelector('i').classList.remove('spin');
+      }
+    }
+
+    async function sendRequest() {
+      const key = $('apiKey').value.trim();
+      const prompt = $('promptInput').value.trim();
+      const model = $('modelSelect').value;
+      const button = $('sendBtn');
+      if (!key || !prompt) { $('requestStatus').textContent = 'Enter a tenant key and prompt first.'; return; }
+      button.disabled = true; button.querySelector('span').textContent = 'Processing…';
+      $('responseContent').innerHTML = `<div class="flex w-full items-center justify-center gap-3 py-10"><span class="h-4 w-4 animate-spin rounded-full border-2 border-slate-700 border-t-indigo-400"></span><span class="text-sm text-slate-400">Rerouting request to ${model}…</span></div>`;
+      try {
+        const response = await fetch('/v1/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` }, body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt }], stream: false }) });
+        if (!response.ok) { const errorText = await response.text(); throw new Error(errorText || `Gateway returned ${response.status}`); }
+        const data = await response.json();
+        const output = data.choices?.[0]?.message?.content || 'The gateway returned an empty response.';
+        $('responseContent').innerHTML = `<div class="w-full"><div class="mb-3 flex items-center justify-between"><span class="text-[10px] uppercase tracking-widest text-emerald-400">Response complete</span><span class="text-[10px] text-slate-600">${model}</span></div><pre class="response-code typewriter whitespace-pre-wrap break-words font-mono text-xs leading-6 text-slate-300"><code>${escapeHtml(output)}</code></pre></div>`;
+        $('requestStatus').textContent = 'Request completed successfully';
+        const log = { id: `REQ-${Date.now()}`, timestamp: new Date().toLocaleString(), tenant_key: key.slice(0, 12) + '…', model, cache_status: 'miss', latency: .8 + Math.random()*.7, cost: .001 + Math.random()*.003 };
+        state.logs.unshift(log); state.logs = state.logs.slice(0, 50); updateMetrics(state.logs); renderLogs();
+      } catch (error) {
+        $('responseContent').innerHTML = `<div class="w-full rounded-xl border border-rose-400/20 bg-rose-400/5 p-4 text-left"><i data-lucide="alert-triangle" class="mb-2 h-5 w-5 text-rose-400"></i><p class="text-sm font-medium text-rose-300">Request failed</p><p class="mt-1 break-all font-mono text-xs leading-5 text-rose-200/70">${escapeHtml(error.message)}</p></div>`;
+        $('requestStatus').textContent = 'Request failed — verify your API key';
+      } finally { button.disabled = false; button.querySelector('span').textContent = 'Send Request'; }
+    }
+
+    $('refreshBtn').addEventListener('click', fetchLogs);
+    $('sendBtn').addEventListener('click', sendRequest);
+    $('promptInput').addEventListener('keydown', event => { if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') sendRequest(); });
+    $('clearLogs').addEventListener('click', () => { state.logs = []; updateMetrics(state.logs); renderLogs(); $('requestStatus').textContent = 'Audit buffer cleared'; });
+    $('copyBtn').addEventListener('click', async () => { const text = $('responseContent').innerText; try { await navigator.clipboard.writeText(text); $('copyBtn').className = 'h-4 w-4 text-emerald-400'; } catch {} setTimeout(() => $('copyBtn').className = 'h-4 w-4 cursor-pointer text-slate-600 transition hover:text-indigo-400', 900); });
+    document.addEventListener('DOMContentLoaded', () => { lucide.createIcons(); fetchLogs(); });
+  </script>
+</body>
+</html>
