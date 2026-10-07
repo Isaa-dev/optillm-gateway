@@ -42,8 +42,36 @@
 ---
 
 ## 🚀 Como Executar o Projeto Localmente
-
 1. **Clonar o repositório**:
    ```bash
-   git clone [[https://github.com/Isaa-dev/optillm-gateway.git](https://github.com/Isa-dev/optillm-gateway.git](https://github.com/Isaa-dev/optillm-gateway))
+   git clone [https://github.com/Isaa-dev/optillm-gateway.git](https://github.com/Isaa-dev/optillm-gateway.git)
    cd optillm-gateway
+   
+Criar e ativar o ambiente virtual:
+
+Bash
+python -m venv venv
+# No Windows (PowerShell):
+.\venv\Scripts\Activate.ps1
+# No Mac/Linux:
+source venv/bin/activate
+Instalar as dependências:
+
+Bash
+pip install -r requirements.txt
+Executar a aplicação:
+
+Bash
+python main.py
+Aceder ao Dashboard:
+Abra o seu navegador em http://127.0.0.1:8000.
+
+Demonstração ao Vivo
+A aplicação encontra-se publicada e ativa em produção: Ver no Render
+
+
+Basta substituir o conteúdo no VS Code, guardar o ficheiro (`Ctrl + S`) e enviar para o GitHub com:
+```bash
+git add README.md
+git commit -m "docs: clean up readme formatting and repository links"
+git push origin main
