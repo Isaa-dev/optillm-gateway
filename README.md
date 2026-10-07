@@ -1,46 +1,49 @@
-# optillm-gateway # 🚀 OptiLLM-Gateway
+# OptiLLM-Gateway 🚀
 
-An intelligent LLM proxy designed for **FinOps cost management**, **smart model routing**, and precise latency/token tracking. Built with Python and Flask.
+> Um proxy gateway full-stack e de nível corporativo para Large Language Models (LLMs), projetado com foco em **FinOps**, **Cibersegurança**, **Performance** e **Auditoria em Tempo Real**.
 
-🛠️ Features
-Smart Routing: Automatically redirects lightweight requests (e.g., short prompts) from high-cost models like gpt-4o to cost-effective alternatives like gpt-3.5-turbo, reducing operational expenses.
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-Web%20Framework-lightgrey?style=flat-square&logo=flask)](https://flask.palletsprojects.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38BDF8?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
+[![SQLite](https://img.shields.io/badge/SQLite-Persistence-003B57?style=flat-square&logo=sqlite)](https://www.sqlite.org/)
+[![Render](https://img.shields.io/badge/Render-Deployed-46E3B7?style=flat-square&logo=render)](https://render.com/)
 
-FinOps Cost Breakdown: Calculates precise input and output costs in USD per request based on granular token usage.
+---
 
-SQLite Audit Logging: Automatically persists all transaction metrics, latencies, and routing decisions into a local database for financial auditing.
+## 🌟 Principais Funcionalidades
 
-Fallback & Mock Mode: Seamlessly switches to simulation mode for zero-cost offline testing and development.
+1. **FinOps & Controlo de Custos**:
+   - Cálculo automático de custos por requisição com base no modelo (`gpt-4o`, `gpt-3.5-turbo`, etc.), discriminando tokens de *input* e *output* em USD.
+   - Monitorização de orçamento e métricas em tempo real.
 
-📦 Tech Stack
-Python / Flask
+2. **Cibersegurança & Guardiões de Privacidade (PII Redaction)**:
+   - Deteção e mascaramento automático de dados sensíveis (e-mails e números de telefone) diretamente no payload antes de atingirem os modelos de IA.
 
-SQLite (Audit database)
+3. **Performance & Cache Semântico**:
+   - Sistema de cache local baseado em hash de prompts utilizando SQLite para garantir respostas instantâneas a pedidos duplicados, reduzindo a latência para menos de `0.001s` e gerando poupança de tokens a custo zero.
 
-Requests (HTTP client)
+4. **Resiliência & Multi-Provider Fallback**:
+   - Mecanismo de redundância inteligente que tenta primariamente a OpenAI e, em caso de indisponibilidade ou falha, comuta automaticamente para um provedor alternativo (como a Groq) ou para um modo de simulação corporativa.
 
-🚀 Quick Start
-Clone the repository:
+5. **Rate Limiting & Controlo Multi-Tenant**:
+   - Proteção de quotas por cada chave de API (`X-API-Key`) com limitação de pedidos por minuto (RPM) e bloqueio automático de excessos (`429 Too Many Requests`).
 
-Bash
-git clone [https://github.com/Isaa-dev/optillm-gateway.git](https://github.com/Isaa-dev/optillm-gateway.git)
-cd optillm-gateway
-Create and activate a virtual environment:
+6. **Dashboard Visual Moderno (Frontend Full-Stack)**:
+   - Interface interativa desenvolvida com **Tailwind CSS**, apresentando cartões de KPI em tempo real, um *Playground* para testes de prompt integrados e uma tabela de auditoria viva conectada ao backend Flask.
 
-Bash
-python -m venv venv
-# Windows PowerShell:
-venv\Scripts\Activate.ps1
-Install dependencies:
+---
 
-Bash
-pip install -r requirements.txt
-Run the Gateway:
+## 🛠️ Arquitetura e Tecnologias
 
-Bash
-python main.py
-📡 Endpoints
-POST /v1/chat/completions: Main proxy endpoint with smart routing and FinOps injection.
+- **Backend**: Python, Flask, SQLite, Requests, Gunicorn.
+- **Frontend**: HTML5, Tailwind CSS (via CDN), JavaScript assíncrono (Fetch API).
+- **Arquitetura**: Estrutura modular (`/templates`, rotas REST, persistência otimizada).
 
-GET /logs: Retrieves the recent financial audit trail from the SQLite database.
+---
 
-GET /health: Service health check.
+## 🚀 Como Executar o Projeto Localmente
+
+1. **Clonar o repositório**:
+   ```bash
+   git clone [https://github.com/SEU-UTILIZADOR/optillm-gateway.git](https://github.com/SEU-UTILIZADOR/optillm-gateway.git)
+   cd optillm-gateway
