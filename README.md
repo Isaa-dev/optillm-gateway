@@ -1,4 +1,4 @@
-# OptiLLM-Gateway 🚀
+# OptiLLM-Gateway 
 
 > Um proxy gateway full-stack e de nível corporativo para Large Language Models (LLMs), projetado com foco em **FinOps**, **Cibersegurança**, **Performance** e **Auditoria em Tempo Real**.
 
