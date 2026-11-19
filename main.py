@@ -15,11 +15,8 @@ DB_NAME = "gateway.db"
 def init_db():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    cursor.execute('DROP TABLE IF EXISTS request_logs')
-    cursor.execute('DROP TABLE IF EXISTS semantic_cache')
-    
     cursor.execute('''
-        CREATE TABLE request_logs (
+        CREATE TABLE IF NOT EXISTS request_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp TEXT,
             api_key TEXT,
@@ -36,7 +33,7 @@ def init_db():
         )
     ''')
     cursor.execute('''
-        CREATE TABLE semantic_cache (
+        CREATE TABLE IF NOT EXISTS prompt_cache (
             prompt_hash TEXT PRIMARY KEY,
             response_json TEXT,
             created_at TEXT
@@ -64,7 +61,7 @@ def mask_pii(text):
 def get_hash(text):
     return hashlib.sha256(text.encode('utf-8')).hexdigest()
 
-# --- ROTA DO FRONTEND DASHBOARD (Carrega o ficheiro index.html na pasta templates) ---
+# --- ROTA DO FRONTEND DASHBOARD (Carrega o arquivo index.html na pasta templates) ---
 @app.route("/", methods=["GET"])
 def dashboard():
     return render_template("index.html")
@@ -108,11 +105,11 @@ def proxy_chat_completions():
     last_content = messages[-1].get("content", "") if messages else ""
     prompt_hash = get_hash(last_content)
 
-    # 1. Verificação de Cache Semântico/Exato
+    # 1. Verificação de cache exato (hash SHA-256 do último prompt)
     if not is_stream:
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
-        cursor.execute("SELECT response_json FROM semantic_cache WHERE prompt_hash = ?", (prompt_hash,))
+        cursor.execute("SELECT response_json FROM prompt_cache WHERE prompt_hash = ?", (prompt_hash,))
         cached_row = cursor.fetchone()
         conn.close()
 
@@ -240,7 +237,7 @@ def proxy_chat_completions():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT OR REPLACE INTO semantic_cache (prompt_hash, response_json, created_at)
+        INSERT OR REPLACE INTO prompt_cache (prompt_hash, response_json, created_at)
         VALUES (?, ?, ?)
     ''', (prompt_hash, json.dumps(data), datetime.utcnow().isoformat()))
     
