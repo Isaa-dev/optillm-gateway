@@ -2,6 +2,8 @@
 
 > Um gateway (proxy) full-stack para APIs de Large Language Models (LLMs), com foco em **controle de custos (FinOps)**, **segurança de dados**, **performance** e **auditoria em tempo real**.
 
+🌐 **Demo ao vivo:** https://optillm-gateway-zl5n.onrender.com
+
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-Web%20Framework-lightgrey?style=flat-square&logo=flask)](https://flask.palletsprojects.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38BDF8?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
@@ -92,4 +94,6 @@ Para testar mascaramento e cache, rode `python test_gateway.py` com o servidor l
 
 ## 🌐 Demonstração ao vivo
 
-A aplicação está publicada no Render.
+A aplicação está publicada no Render: **[optillm-gateway-zl5n.onrender.com](https://optillm-gateway-zl5n.onrender.com)**
+
+> No plano gratuito do Render, o serviço "dorme" após um período sem uso — o primeiro acesso pode levar alguns segundos para carregar.
